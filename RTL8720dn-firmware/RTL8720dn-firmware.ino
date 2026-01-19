@@ -1,9 +1,14 @@
-#include "vector"
 #include "wifi_conf.h"
 #include "wifi_cust_tx.h"
 #include "wifi_drv.h"
 #include "debug.h"
 #include "WiFi.h"
+
+// Undefine Arduino macros that conflict with C++ STL
+#undef min
+#undef max
+
+#include "vector"
 
 //Captive portals
 #include "portals/compressed/facebook.h"
