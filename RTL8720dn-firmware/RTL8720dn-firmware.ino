@@ -1,14 +1,19 @@
+// Include C++ STL headers first, before they can be affected by Arduino macros
+#ifdef max
+#undef max
+#undef min
+#include "vector"
+#define max(a,b) ((a)>(b)?(a):(b))
+#define min(a,b) ((a)<(b)?(a):(b))
+#else
+#include "vector"
+#endif
+
 #include "wifi_conf.h"
 #include "wifi_cust_tx.h"
 #include "wifi_drv.h"
 #include "debug.h"
 #include "WiFi.h"
-
-// Undefine Arduino macros that conflict with C++ STL
-#undef min
-#undef max
-
-#include "vector"
 
 //Captive portals
 #include "portals/compressed/facebook.h"
