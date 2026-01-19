@@ -4,8 +4,8 @@
 #include <Arduino.h>
 
 typedef struct {
-  uint16_t frame_control = 0xC0;
-  uint16_t duration = 0xFFFF;
+  uint16_t frame_control = 0x00C0;
+  uint16_t duration = 0x0000;
   uint8_t destination[6];
   uint8_t source[6];
   uint8_t access_point[6];

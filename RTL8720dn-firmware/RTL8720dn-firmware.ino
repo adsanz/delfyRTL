@@ -77,6 +77,9 @@ __u8 customMac[8]={0x00,0xE0,0x4C,0x01,0x02,0x03,0x00,0x00};
 bool useCustomMac=false;
 //int allChannels[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 extern u8 rtw_get_band_type(void);
+extern "C" int wifi_set_band(uint8_t band);
+#define RTW_802_11_BAND_2_4GHZ  0
+#define RTW_802_11_BAND_5GHZ    1
 #define FRAMES_PER_DEAUTH 5
 String generateRandomString(int len){
   String randstr = "";
@@ -556,7 +559,17 @@ void loop() {
   
   if (deauth_wifis.size() > 0) {
     memcpy(deauth_bssid, scan_results[deauth_wifis[current_num]].bssid, 6);
-    wext_set_channel(WLAN0_NAME, scan_results[deauth_wifis[current_num]].channel);
+    
+    int target_channel = scan_results[deauth_wifis[current_num]].channel;
+    
+    // Set band type before channel switch
+    if (target_channel <= 14) {
+      wifi_set_band(RTW_802_11_BAND_2_4GHZ);
+    } else {
+      wifi_set_band(RTW_802_11_BAND_5GHZ);
+    }
+    
+    wext_set_channel(WLAN0_NAME, target_channel);
     current_num++;
     if (current_num >= deauth_wifis.size()) current_num = 0;
     digitalWrite(LED_R, HIGH);
